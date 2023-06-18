@@ -26,4 +26,4 @@ for file in os.listdir(directory):
         print("Image saved!")
     else:
         print (f"{file_name}: file extension not supported.")
-    print("All files were processed. Exitting. Thank you!")
+print("All files were processed. Exitting. Thank you!")
