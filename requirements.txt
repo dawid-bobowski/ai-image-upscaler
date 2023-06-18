@@ -1,0 +1,24 @@
+certifi==2023.5.7
+charset-normalizer==3.1.0
+colorama==0.4.6
+filelock==3.12.2
+fsspec==2023.6.0
+huggingface-hub==0.15.1
+idna==3.4
+Jinja2==3.1.2
+MarkupSafe==2.1.3
+mpmath==1.3.0
+networkx==3.1
+numpy==1.25.0
+opencv-python==4.7.0.72
+packaging==23.1
+Pillow==9.5.0
+PyYAML==6.0
+RealESRGAN @ git+https://github.com/sberbank-ai/Real-ESRGAN.git@362a0316878f41dbdfbb23657b450c3353de5acf
+requests==2.31.0
+sympy==1.12
+torch==2.0.1
+torchvision==0.15.2
+tqdm==4.65.0
+typing_extensions==4.6.3
+urllib3==2.0.3
