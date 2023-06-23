@@ -5,10 +5,11 @@ import os
 
 GPU_DEVICE = "cuda"
 CPU_DEVICE = "cpu"
+DIR_IGNORE_LIST = [".gitignore", "upscaled"]
+SUPPORTED_EXTENSIONS = ["png", "jpg"]
+SUPPORTED_UPSCALE_MULTIPLIERS = ["2", "4", "8"]
+IAMGES_PATH = "images/"
 
-supported_extensions = ["png", "jpg"]
-supported_upscale_multipliers = ["2", "4", "8"]
-images_path = "images/"
 
 # load a device
 print("Loading device... ", end="")
@@ -24,7 +25,7 @@ print("Device is ready!\n")
 # set up an upscale multiplier
 while True:
   multiplier = input("How much would you like to upscale your images? Available options are: 2, 4 or 8 (press Enter for default=4): ")
-  if multiplier not in [supported_upscale_multipliers, ""]:
+  if multiplier not in [SUPPORTED_UPSCALE_MULTIPLIERS, ""]:
       print("Your choice has to be one of 2, 4 (default) or 8.")
       continue
   break
@@ -40,18 +41,29 @@ print("Model loaded!")
 
 # upscale images
 print("Starting upscaling process...\n")
-directory = os.fsencode(images_path)
+directory = os.fsencode(IAMGES_PATH)
+
 for file in os.listdir(directory):
-    file_name = os.fsdecode(file)
-    extension = file_name.split(".")[-1]
-    if extension in supported_extensions: 
-        print(f"{file_name}: file OK.\nProcessing... ", end="")
-        image = Image.open(f"{images_path}{file_name}").convert("RGB")
-        sr_image = model.predict(image)
-        sr_image.save(f"{images_path}upscaled/{file_name.split('.')[-2]}-upscaled.{extension}")
-        print("Image saved!")
-    if file_name == ".gitignore":
+    filename = os.fsdecode(file)
+
+    if filename in DIR_IGNORE_LIST:
         continue
-    else:
-        print (f"{file_name}: file extension not supported.")
+
+    extension = filename.split(".")[-1]
+    upscaled_filename = f"{IAMGES_PATH}upscaled/{filename.split('.')[0]}-upscaled.{extension}"
+
+    if os.path.isfile(upscaled_filename):
+        print(f"{filename}: file already upscaled.")
+        continue
+
+    if extension in SUPPORTED_EXTENSIONS: 
+        print(f"{filename}: file OK.\nProcessing... ", end="")
+        image = Image.open(f"{IAMGES_PATH}{filename}").convert("RGB")
+        sr_image = model.predict(image)
+        sr_image.save(upscaled_filename)
+        print("Image saved!")
+        continue
+
+    print (f"{filename}: file extension not supported.")
+
 print("\nAll files were processed. Exitting. Thank you for using AI Image Upscaler!")
