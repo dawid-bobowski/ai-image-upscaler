@@ -8,6 +8,7 @@ import wx
 import os
 import subprocess
 import threading
+import sys
 from config import IGNORE_FILES, SUPPORTED_EXTENSIONS
 
 # begin wxGlade: dependencies
@@ -22,16 +23,35 @@ class MainFrame(wx.Frame):
     output_dir = f"{os.getcwd()}\\images\\upscaled"
     assets_dir = f"{os.getcwd()}\\assets"
 
+    class ScriptThread(threading.Thread):
+        def __init__(self, input_dir, output_dir, tc_logs, refresh_list):
+            threading.Thread.__init__(self)
+            self.input_dir = input_dir
+            self.output_dir = output_dir
+            self.tc_logs = tc_logs
+            self.refresh_list = refresh_list
+            
+        def run(self):
+            self.tc_logs.Clear()
+            command = ["py", "-u", "main.py", self.input_dir, self.output_dir]
+            env = os.environ.copy()
+            env["PYTHONUNBUFFERED"] = "1"
+            process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+            
+            for line in iter(process.stdout.readline, ""):
+                wx.CallAfter(self.append_log, line)
+            
+            process.wait()
+            self.refresh_list(self.output_dir)
+        
+        def append_log(self, line):
+            self.tc_logs.AppendText(line)
+
     def scale_bitmap(self, bitmap, width, height):
         image = bitmap.ConvertToImage()
         image.Rescale(width, height, wx.IMAGE_QUALITY_HIGH)
         scaled_bitmap = wx.Bitmap(image)
         return scaled_bitmap
-
-    def run_script(self):
-        process = subprocess.Popen(f'py main.py "{self.input_dir}" "{self.output_dir}"', stdin=subprocess.PIPE)
-        process.communicate(input='\n'.encode())
-        self.refresh_list(self.output_dir)
 
     def refresh_list(self, dir):
         if dir == self.input_dir:
@@ -61,9 +81,11 @@ class MainFrame(wx.Frame):
         left_block = wx.BoxSizer(wx.VERTICAL)
         sizer_1.Add(left_block, 0, wx.EXPAND, 0)
 
+        left_block.Add((200, 20), 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+
         l_title = wx.StaticText(self.panel_1, wx.ID_ANY, "", style=wx.ALIGN_CENTER_HORIZONTAL)
         l_title.SetMinSize((300, 32))
-        l_title.SetFont(wx.Font(20, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Haettenschweiler"))
+        l_title.SetFont(wx.Font(20, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Lucida Console"))
         l_title.SetLabel(self.app_title)
         left_block.Add(l_title, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 4)
 
@@ -96,18 +118,20 @@ class MainFrame(wx.Frame):
         menu = wx.BoxSizer(wx.VERTICAL)
         left_block.Add(menu, 1, wx.EXPAND, 0)
 
-        calculate_section = wx.BoxSizer(wx.HORIZONTAL)
-        menu.Add(calculate_section, 0, wx.ALL | wx.EXPAND, 4)
+        self.tc_logs = wx.TextCtrl(self.panel_1, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY)
+        menu.Add(self.tc_logs, 1, wx.ALL | wx.EXPAND, 2)
 
-        l_upscale = wx.StaticText(self.panel_1, wx.ID_ANY, "Let the magic happen!")
-        calculate_section.Add(l_upscale, 0, wx.ALL, 4)
+        options_section = wx.BoxSizer(wx.HORIZONTAL)
+        menu.Add(options_section, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+
+        self.rb_multiplier = wx.RadioBox(self.panel_1, wx.ID_ANY, "Mulitplier:", choices=["2", "4", "8"], majorDimension=3, style=wx.RA_SPECIFY_COLS)
+        self.rb_multiplier.SetMinSize((120, 40))
+        self.rb_multiplier.SetSelection(0)
+        options_section.Add(self.rb_multiplier, 1, wx.ALL, 4)
 
         self.b_upscale = wx.Button(self.panel_1, wx.ID_ANY, "Upscale")
-        calculate_section.Add(self.b_upscale, 0, wx.ALL, 0)
-
-        menu.Add((0, 0), 0, 0, 0)
-
-        menu.Add((0, 0), 0, 0, 0)
+        self.b_upscale.SetMinSize((120, 34))
+        options_section.Add(self.b_upscale, 1, wx.ALIGN_BOTTOM | wx.ALL, 4)
 
         right_block = wx.BoxSizer(wx.VERTICAL)
         sizer_1.Add(right_block, 0, wx.EXPAND, 0)
@@ -155,6 +179,7 @@ class MainFrame(wx.Frame):
         self.panel_1.SetSizer(sizer_1)
 
         self.Layout()
+        self.SetTitle(self.app_title)
 
         self.Bind(wx.EVT_BUTTON, lambda event: self.on_change_dir_clicked(event, self.input_dir), self.b_input)
         self.Bind(wx.EVT_BUTTON, lambda event: self.on_change_dir_clicked(event, self.output_dir), self.b_output)
@@ -181,12 +206,12 @@ class MainFrame(wx.Frame):
         event.Skip()
 
     def on_upscale_clicked(self, event):  # wxGlade: MainFrame.<event_handler>
-        thread = threading.Thread(target=self.run_script)
+        thread = self.ScriptThread(self.input_dir, self.output_dir, self.tc_logs, self.refresh_list)
         thread.start()
         event.Skip()
 
     def on_item_dclick(self, event, dir):  # wxGlade: MainFrame.<event_handler>
-        subprocess.run(['start', '', os.path.normpath(f"{dir}\\{event.GetString()}")], shell=True)
+        subprocess.run(["start", "", os.path.normpath(f"{dir}\\{event.GetString()}")], shell=True)
         event.Skip()
 
     def on_refresh_clicked(self, event, dir):  # wxGlade: MainFrame.<event_handler>

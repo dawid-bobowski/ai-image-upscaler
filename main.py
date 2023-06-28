@@ -6,11 +6,13 @@ from config import (
     GPU_DEVICE,
     CPU_DEVICE,
     SUPPORTED_UPSCALE_MULTIPLIERS,
-    IMAGES_PATH,
     IGNORE_FILES,
     SUPPORTED_EXTENSIONS,
 )
+import warnings
 
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="User provided device_type of 'cuda', but CUDA is not available. Disabling")
 
 # load a device
 print("Loading device... ", end="")
@@ -24,15 +26,21 @@ if device_type == GPU_DEVICE:
 print("Device is ready!\n")
 
 # set up an upscale multiplier
-while True:
-  multiplier = input("How much would you like to upscale your images? Available options are: 2, 4 or 8 (press Enter for default=4): ")
-  if multiplier not in [SUPPORTED_UPSCALE_MULTIPLIERS, ""]:
-      print("Your choice has to be one of 2, 4 (default) or 8.")
-      continue
-  break
-if multiplier == "":
-    multiplier = "4"
-print(f"Chosen upscale multiplier is x{multiplier}.\n")
+multiplier = 2
+cli_multiplier = None if len(sys.argv) < 4 else sys.argv[3]
+if cli_multiplier is None:
+    print(f"Using default upscale multiplier x{multiplier}.")
+elif cli_multiplier not in SUPPORTED_UPSCALE_MULTIPLIERS:
+    print(f"Upscale multiplier x{cli_multiplier} is not supported. Using default one set to x{multiplier}.")
+else:
+    multiplier = cli_multiplier
+    print(f"Upscale multiplier set to x{multiplier}.")
+
+# print directories
+input_dir = sys.argv[1]
+output_dir = sys.argv[2]
+print(f"Input directory: {input_dir}")
+print(f"Output directory: {output_dir}\n")
 
 # load an ai model
 print("Loading AI model... ", end="")
@@ -42,10 +50,6 @@ print("Model loaded!")
 
 # upscale images
 print("Starting upscaling process...\n")
-input_dir = sys.argv[1]
-output_dir = sys.argv[2]
-print(input_dir)
-print(output_dir)
 
 for file in os.listdir(input_dir):
     filename = os.fsdecode(file)
@@ -54,7 +58,7 @@ for file in os.listdir(input_dir):
         continue
 
     extension = filename.split(".")[-1]
-    upscaled_filename = f"{output_dir}/{filename.split('.')[0]}-upscaled.{extension}"
+    upscaled_filename = f"{output_dir}/{filename.split('.')[0]}-x{multiplier}.{extension}"
 
     if os.path.isfile(upscaled_filename):
         print(f"{filename}: file already upscaled.")
@@ -70,4 +74,4 @@ for file in os.listdir(input_dir):
 
     print (f"{filename}: file extension not supported.")
 
-print("\nAll files were processed. Exitting. Thank you for using AI Image Upscaler!")
+print("\nAll files were processed. Thank you for using AI Image Upscaler!")
