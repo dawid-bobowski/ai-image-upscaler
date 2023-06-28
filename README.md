@@ -5,6 +5,8 @@ AI Image Upscaler is a simple Python CLI program which upscales images with JPG 
 ## To use a GPU mode:
 
 - before doing anything, firstly install CUDA Toolkit 11.7 from Nvidia (the only tested version) available here: https://developer.nvidia.com/cuda-11-7-0-download-archive
+- pip install git+https://github.com/sberbank-ai/Real-ESRGAN.git
+- pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 
 ## Before you run the program:
 
