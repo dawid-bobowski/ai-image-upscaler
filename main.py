@@ -1,14 +1,15 @@
 import torch
 from PIL import Image
 from RealESRGAN import RealESRGAN
-import os
-
-GPU_DEVICE = "cuda"
-CPU_DEVICE = "cpu"
-DIR_IGNORE_LIST = [".gitignore", "upscaled"]
-SUPPORTED_EXTENSIONS = ["png", "jpg"]
-SUPPORTED_UPSCALE_MULTIPLIERS = ["2", "4", "8"]
-IAMGES_PATH = "images/"
+import os, sys
+from config import (
+    GPU_DEVICE,
+    CPU_DEVICE,
+    SUPPORTED_UPSCALE_MULTIPLIERS,
+    IMAGES_PATH,
+    IGNORE_FILES,
+    SUPPORTED_EXTENSIONS,
+)
 
 
 # load a device
@@ -41,16 +42,19 @@ print("Model loaded!")
 
 # upscale images
 print("Starting upscaling process...\n")
-directory = os.fsencode(IAMGES_PATH)
+input_dir = sys.argv[1]
+output_dir = sys.argv[2]
+print(input_dir)
+print(output_dir)
 
-for file in os.listdir(directory):
+for file in os.listdir(input_dir):
     filename = os.fsdecode(file)
 
-    if filename in DIR_IGNORE_LIST:
+    if filename in IGNORE_FILES:
         continue
 
     extension = filename.split(".")[-1]
-    upscaled_filename = f"{IAMGES_PATH}upscaled/{filename.split('.')[0]}-upscaled.{extension}"
+    upscaled_filename = f"{output_dir}/{filename.split('.')[0]}-upscaled.{extension}"
 
     if os.path.isfile(upscaled_filename):
         print(f"{filename}: file already upscaled.")
@@ -58,7 +62,7 @@ for file in os.listdir(directory):
 
     if extension in SUPPORTED_EXTENSIONS: 
         print(f"{filename}: file OK.\nProcessing... ", end="")
-        image = Image.open(f"{IAMGES_PATH}{filename}").convert("RGB")
+        image = Image.open(f"{input_dir}\\{filename}").convert("RGB")
         sr_image = model.predict(image)
         sr_image.save(upscaled_filename)
         print("Image saved!")

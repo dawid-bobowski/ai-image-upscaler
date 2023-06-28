@@ -2,3 +2,5 @@ venv
 images/*
 results/*
 __pycache__
+app.py.bak
+app.wxg.bak

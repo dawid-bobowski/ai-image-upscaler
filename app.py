@@ -8,14 +8,13 @@ import wx
 import os
 import subprocess
 import threading
+from config import IGNORE_FILES, SUPPORTED_EXTENSIONS
 
 # begin wxGlade: dependencies
 # end wxGlade
 
 # begin wxGlade: extracode
 # end wxGlade
-
-IGNORE_FILES = [".gitignore", "upscaled"]
 
 class MainFrame(wx.Frame):
     app_title = "AI Image Upscaler"
@@ -30,7 +29,7 @@ class MainFrame(wx.Frame):
         return scaled_bitmap
 
     def run_script(self):
-        process = subprocess.Popen("py main.py", stdin=subprocess.PIPE)
+        process = subprocess.Popen(f'py main.py "{self.input_dir}" "{self.output_dir}"', stdin=subprocess.PIPE)
         process.communicate(input='\n'.encode())
         self.refresh_list(self.output_dir)
 
@@ -40,7 +39,8 @@ class MainFrame(wx.Frame):
         else:
             self.lb_output.Clear()
         for filename in os.listdir(dir):
-            if filename in IGNORE_FILES:
+            extension = filename.split(".")[-1]
+            if filename in IGNORE_FILES or extension not in SUPPORTED_EXTENSIONS:
                 continue
             if dir == self.input_dir:
                 self.lb_input.Append(filename)
@@ -176,6 +176,7 @@ class MainFrame(wx.Frame):
             else:
                 self.tc_output.SetValue(selected_directory)
                 self.output_dir = selected_directory
+            self.refresh_list(selected_directory)
         dialog.Destroy()
         event.Skip()
 
